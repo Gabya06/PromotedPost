@@ -1,11 +1,11 @@
 # PromotedPost
 
 This repository includes a jupyter notebook which implements machine learning models such as logistic regression, 
-decision trees and random forests using sci-kit learn to predict whether a Facebook post is promoted or not. 
+decision trees and random forests using sci-kit learn to predict whether a Facebook post is promoted or not. The problem is a classification problem, where I created the labels for promoted or not based on impressions paid.
 
 ## Overview
 
-Below is a shorter version of the methods implemented in the jupyter-notebook to demonstrate the data science process of raw data collection, data cleaning & processing, exploratory data analysis, and machine learning models used in predicting if a Facebook post is promoted.
+Below is a short version of the methods implemented to demonstrate the data science process, starting with the raw data collection, data cleaning & processing, exploratory data analysis, and machine learning model implementations used in predicting if a Facebook post is promoted. This a classification problem, where I created the labels for promoted or not based on impressions paid.
 
 #### Data Collection
 In order to get the data I was looking for, I used the below SQL query on a sqlite database which contained facebook pages, posts and posts-insights data. I used an inner join to join the pages and posts tables to get access to page information such as facebook page id from the pages table and facebook post id from the posts table. I added another inner join to join post with post-insights data to have access to post insights fields such as impressions paid, organic impressions, post consumption by type, post video views. 
@@ -75,3 +75,19 @@ pyplot.show()
 
 ![negativefeedback](/images/negativefeedback.png)
 
+
+#### Machine Learning Algorithms - Logistic Regression, Decision Tree and Random Forests
+### 1 - Logistic Regression 
+
+I started off by trying logistic regression on the entire data and was not disappointed to see that it performed poorly by predicting all posts as not promoted (class 0). This is not completly surprising since most of the posts are not promoted. While the accuracy score is high, this is not a good thing because the model does not take into account the imbalance of classes in the data. Also, all model coefficients are very small indicating small movement in output caused by an increase/decrease in input
+
+```python
+cols_train = data.drop('is_promoted', axis = 1).columns
+X = data[cols_train]
+y = data.is_promoted
+target_names = ['class 0', 'class 1']
+
+logreg = LogisticRegression(C=1e9)
+logreg.fit(X,y)
+data['promo_pred_1'] = logreg.predict(X)
+```
