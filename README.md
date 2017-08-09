@@ -59,6 +59,19 @@ def clean(dat, threshold = 0.80, delete_paid = False):
 
 #### Data Exploration
 
-After quickly plotting the features, I noticed that impressions fan unique, consumptions unique, negative feedback unique and video views organic unique 
+After quickly plotting the features, I noticed that impressions fan unique, consumptions unique, negative feedback unique and video views organic unique seemed to have a widder range of values, and perhaps higher variance than the other features that had more zero values.
 
-![imp](/images/impressions.png)
+```python
+sub_dat = df_joined.ix[:, 19:22]
+fig, axes = pyplot.subplots(nrows=1, ncols=3, figsize=(12,6), sharey=True)
+for i, var in enumerate(sub_dat.columns):
+    l = var.replace('consumptions', 'cons').replace('impressions','imp').replace('by_','').replace('unique','un') 
+    sub_dat[[i]].plot(ax = axes[i], title = l, legend ='')
+fig.subplots_adjust(hspace=0.5, wspace=0.5)
+pyplot.show()
+
+```
+![impressions](/images/impressions.png)
+
+![negativefeedback](/images/negativefeedback.png)
+
