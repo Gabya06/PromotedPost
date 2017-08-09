@@ -7,7 +7,7 @@ decision trees and random forests using sci-kit learn to predict whether a Faceb
 
 Below is a shorter version of the methods implemented in the jupyter-notebook to demonstrate the data science process of raw data collection, data cleaning & processing, exploratory data analysis, and machine learning models used in predicting if a Facebook post is promoted.
 
-## Data Collection
+#### Data Collection
 In order to get the data I was looking for, I used the below SQL query on a sqlite database which contained facebook pages, posts and posts-insights data. I used an inner join to join the pages and posts tables to get access to page information such as facebook page id from the pages table and facebook post id from the posts table. I added another inner join to join post with post-insights data to have access to post insights fields such as impressions paid, organic impressions, post consumption by type, post video views. 
 Since the goal of this project was to predict if a post was promoted or not, I defined a post as promoted when there were more than 0 impressions paid for that post, and otherwise I labeled the post as not promoted. This is the response variable that I was aiming to predict.
 
@@ -28,7 +28,7 @@ inner join posts as po on p.id = po.page_id
 inner join post_insights as ps on ps.post_id = po.id
 ```
 
-## Data Cleaning 
+#### Data Cleaning 
 
 To clean the data, I created a helper function to remove columns where more than 80% of the data was missing, filled in missing vales based on the average for that facebook page id and lowered column names. 
 My thoughts were that if more than 80% of a column has missing values, then there is not much information in that column and it should be removed.
@@ -57,5 +57,8 @@ def clean(dat, threshold = 0.80, delete_paid = False):
     return dat
 ```python
 
+#### Data Exploration
 
+After quickly plotting the features, I noticed that impressions fan unique, consumptions unique, negative feedback unique and video views organic unique 
 
+![imp](/images/impressions.png)
