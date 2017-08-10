@@ -216,8 +216,8 @@ plot_confusion_matrix(cm_tree)
 Average accuracy: 0.99
 
 Predictions:
-*Class 0:    30221
-*Class 1:      500
+* Class 0:    30221
+* Class 1:      500
 
 Confustion Matrix:
 
