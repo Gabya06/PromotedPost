@@ -79,7 +79,7 @@ pyplot.show()
 #### Machine Learning Algorithms - Logistic Regression, Decision Tree and Random Forests
 ### 1 - Logistic Regression 
 
-I started off by trying logistic regression on the entire data and was not disappointed to see that it performed poorly by predicting all posts as not promoted (class 0). This is not completly surprising since most of the posts are not promoted. While the accuracy score is high, this is not a good thing because the model does not take into account the imbalance of classes in the data. Also, all model coefficients are very small indicating small movement in output caused by an increase/decrease in input
+I started off by trying logistic regression on the entire data and was not disappointed to see that it performed poorly by predicting all posts as not promoted (class 0). This is not completly surprising since most of the posts are not promoted. While the accuracy score is high, this is not a good thing because the model does not take into account the imbalance of classes in the data. Also, all model coefficients are very small indicating small movement in output caused by an increase/decrease in input.
 
 ```python
 cols_train = data.drop('is_promoted', axis = 1).columns
@@ -91,3 +91,29 @@ logreg = LogisticRegression(C=1e9)
 logreg.fit(X,y)
 data['promo_pred_1'] = logreg.predict(X)
 ```
+
+Here we can see that the logistic regression model predicted all class 0:
+Class 0:    204804
+
+The below confusion matrics shows that there were 201448 non promoted posts correctly predicted, while 3356 of the promoted posts also were labeled as non-promoted.
+
+Confustion Matrix:
+
+|                   | Non-Promoted Predicted |  Promoted Predicted |
+|-------------------|------------------------|---------------------|
+Non-Promoted-Actual |           201448       |          0          |
+Promoted-Actual     |           3356         |          0          |
+
+The classification report breaks down the true positive and false positive rates to give better insights into where the model scored well or not.
+
+Classification Report:
+
+| Class       | Precision | Recall | F1-Score |
+| ------------|-----------|--------|----------|
+| Non-Promoted|   0.98    |  1.00  |  0.99    |
+| Promoted    |   0.00    |  0.00  |  0.00    |
+|avg/total    |   0.97    |  0.98  |  0.98    |
+
+
+From the visualization below, it is clear that all posts were predicted as non-promoted:
+![logreg_confmatrix](/images/logreg_confmatrix.png)
