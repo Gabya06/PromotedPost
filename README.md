@@ -55,7 +55,7 @@ def clean(dat, threshold = 0.80, delete_paid = False):
         dat[i].fillna(dat.groupby('facebook_post_id')[i].transform("mean"), inplace = True)
         dat[i].fillna(dat[i].mean(), inplace = True)
     return dat
-```python
+```
 
 #### Data Exploration
 
@@ -69,15 +69,15 @@ for i, var in enumerate(sub_dat.columns):
     sub_dat[[i]].plot(ax = axes[i], title = l, legend ='')
 fig.subplots_adjust(hspace=0.5, wspace=0.5)
 pyplot.show()
-
 ```
+
 ![impressions](/images/impressions.png)
 
 ![negativefeedback](/images/negativefeedback.png)
 
 
 #### Machine Learning Algorithms - Logistic Regression, Decision Tree and Random Forests
-### 1 - Logistic Regression 
+### 1 - Logistic Regression on entire dataset
 
 I started off by trying logistic regression on the entire data and was not disappointed to see that it performed poorly by predicting all posts as not promoted (class 0). This is not completly surprising since most of the posts are not promoted. While the accuracy score is high, this is not a good thing because the model does not take into account the imbalance of classes in the data. Also, all model coefficients are very small indicating small movement in output caused by an increase/decrease in input.
 
@@ -117,3 +117,120 @@ Classification Report:
 
 From the visualization below, it is clear that all posts were predicted as non-promoted:
 ![logreg_confmatrix](/images/logreg_confmatrix.png)
+
+### 2 - Logistic Regression on a few features
+Before performing feature selection, I wanted to try using Logistic Regression and training the model on a few features that I thought would be predictive. I chose impressions fan unique, consumptions unique, negative feedback unique, video views organic unique and impressions organic unique. 
+The accuracy was lower because it was at at 56% but the model predicted some posts to be promoted, so the predictions are a bit more balanced. The precision is low for promoted posts as it incorrectly classifies alot of posts as promoted (false positives).
+Recall/Sensitivity is low for unpromoted posts - number of prediction unpromoted posts is low in comparison to the total number of unpromoted posts. When looking at coefficients, these seems to indicate some relationship to output, so I needed to work on selecting better features.
+
+
+```python
+'''
+Logistic Regression #2 - on .90 dataset & only a few features 
+'''
+
+X = data[['impressions_fan_unique','consumptions_unique','negative_feedback_unique','video_views_organic_unique','impressions_organic_unique']]
+y = data.is_promoted
+# training and testing
+X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.15, random_state=1)
+Cs = np.logspace(-4, 4, 3)
+logreg3 = LogisticRegression(C=Cs[2], class_weight='balanced', multi_class = 'ovr')
+logreg3.fit(X_train,y_train)
+promo_pred_3 = logreg3.predict(X_test)
+```
+
+Average accuracy: 55.82%
+
+Model Predictions:
+
+* Class 0:    16829
+* Class 1:    13892
+
+Confustion Matrix:
+
+|                   | Non-Promoted Predicted |  Promoted Predicted |
+|-------------------|------------------------|---------------------|
+Non-Promoted-Actual |           16744        |         13489       |
+Promoted-Actual     |           85           |           403       |
+
+![logreg_confmatrix_2](/images/logreg_confmatrix_2.png)
+
+### 3 - Decision Tree Classifier and feature importance
+Below I trained a decision tree classifier on all the features, and it showed that the top 3 features with the most imformation gain were: impressions fan unique, impressions organic unique ,impressions by story type unique other. 
+The model performed alot better than logistic regression. It scored perfectly on unpromoted posts and very well on promoted posts.
+
+```python
+'''
+FEATURE IMPORTANCE USING DECISION TREE
+'''
+X, y = shuffle(data.ix[:, 1:-3], data.is_promoted, random_state=23)
+X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.15, random_state=1)
+
+tree_model = tree.DecisionTreeClassifier(criterion='gini')
+tree_model = tree.DecisionTreeClassifier()
+tree_model.fit(X_train, y_train)
+
+tree_predicted = tree_model.predict(X_test)
+```
+
+Decision trees select the best feaures to split on at each node and based on the feature with the highest information gain it splits, and they can return the feature importance:
+
+```python
+tree_impt = tree_model.feature_importances_
+
+# get sorted index 
+sorted_idx_tree = np.argsort(tree_impt)
+for f in xrange(len(X.columns),0,-1):
+    print("%d. feature %d (%f)  %s" % (f , sorted_idx[f-1], tree_impt[sorted_idx_tree[f-1]], X.columns[sorted_idx_tree[f-1]]))
+```
+
+| Importance | Feature Name                                     |
+|--------- --|--------------------------------------------------|
+|(0.398624)  |impressions_fan_unique                            |
+|(0.140910)  |impressions_organic_unique                        |
+|(0.096830)  |impressions_by_story_type_unique_other            |
+|(0.062721)  |consumptions_unique                               |
+|(0.060194)  |consumptions_by_type_unique_other_clicks          |
+|(0.059505)  |video_views_organic_unique                        |
+|(0.047170)  |consumptions_by_type_unique_link_clicks           |
+|(0.029568)  |consumptions_by_type_unique_photo_view            |
+|(0.027654)  |negative_feedback_unique                          |
+|(0.026745)  |video_complete_views_organic_unique               |
+|(0.026578)  |negative_feedback_by_type_unique_hide_clicks      |
+|(0.023500)  |negative_feedback_by_type_unique_hide_all_clicks  |
+
+```python
+print "Average accuracy %.4f'" % tree_model.score(X_test, y_test)
+print
+print "Predictions:\n", pd.value_counts(tree_predicted)
+
+print "Confusion Matrix:\n"
+print(get_confusion_matrix(y_test, tree_predicted))
+# Compute confusion matrix
+cm_tree = confusion_matrix(y_true=y_test, y_pred=tree_predicted)
+
+pyplot.figure()
+plot_confusion_matrix(cm_tree)
+```
+
+Average accuracy: 0.99
+
+Predictions:
+*Class 0:    30221
+*Class 1:      500
+
+Confustion Matrix:
+
+|                   | Non-Promoted Predicted |  Promoted Predicted |
+|-------------------|------------------------|---------------------|
+Non-Promoted-Actual |           30083        |         109         |
+Promoted-Actual     |           138          |           391       |
+
+Classification Report:
+
+| Class       | Precision | Recall | F1-Score |
+| ------------|-----------|--------|----------|
+| Non-Promoted|   1.00    |  1.00  |  1.00    |
+| Promoted    |   0.78    |  0.74  |  0.76    |
+|avg/total    |   0.99    |  0.99  |  0.99    |
+
