@@ -5,7 +5,7 @@ decision trees and random forests using sci-kit learn to predict whether a Faceb
 
 ## Project Motivation
 
-Facebook has many pages and posts that people look at on a daily basis. While many of us many not pay attention to the sponsored posts, there are quite a lot of these paid posts that take up space on our Facebook feeds. But how can you tell if a post is paid without looking for the Sponsored label? Do these paid posts have higher number of views just because they are paid for? *The question I wanted to answer was: can we predict if a Facebook post is promoted or not?*
+Facebook has many pages and posts that people look at on a daily basis. While many of us may not pay attention to the sponsored posts, there are quite a lot of these paid posts that take up space on our Facebook feeds. But how can you tell if a post is paid without looking for the Sponsored label? Do these paid posts have higher number of views just because they are paid for? *The question I wanted to answer was: can we predict if a Facebook post is promoted or not?*
 
 #### Data Collection
 In order to get the data I was looking for, I used the below SQL query on a sqlite database which contained facebook pages, posts and posts-insights data. I used an inner join to join the pages and posts tables to get access to page information such as facebook page id from the pages table and facebook post id from the posts table. I added another inner join to join post with post-insights data to have access to post insights fields such as impressions paid, organic impressions, post consumption by type, post video views. 
@@ -30,8 +30,8 @@ inner join post_insights as ps on ps.post_id = po.id
 
 #### Data Cleaning 
 
-To clean the data, I created a helper function to remove columns where more than 80% of the data was missing, filled in missing vales based on the average for that facebook page id and lowered column names. 
-My thoughts were that if more than 80% of a column has missing values, then there is not much information in that column and it should be removed.
+To clean the data, I created a little helper function to take care of some of the following processing tasks: removing columns where more than 80% of the data was missing, filling in missing values based on the average for that facebook page id and fixing column names. 
+My thoughts were that if a column has more than 80% of its values missing, then there is not much information in that column and it should be removed. What can we learn from an empty column after all?
 The clean function also changed facebook page names to lower letters and converted facebook page ids to string type. I included the option to remove columns where there was paid information, in case I would want to remove these columns later.
 
 ```python
@@ -78,11 +78,13 @@ pyplot.show()
 
 #### Machine Learning Algorithms - Logistic Regression and Decision Tree Classifier
 
-Since this is a classification problem where we predict a class 0 (not promoted) or class 1 (promoted), I chose to look at Logistic Regression and Decision Tree classifiers.
+Since this is a classification problem where we predict if a post is promoted (let's call this class 1) or not promoted (class 0, I chose to use Logistic Regression and Decision Tree classifiers. Both of these are simple supervised machine learning classification algorithms that can be implemented quickly and are pretty interpretable.
 
 ### 1 - Logistic Regression on entire dataset
 
-I started off by trying logistic regression on the entire data and was not disappointed to see that it performed poorly by predicting all posts as not promoted (class 0). This is not completly surprising since most of the posts are not promoted. While the accuracy score is high, this is not a good thing because the model does not take into account the imbalance of classes in the data. Also, all model coefficients are very small indicating small movement in output caused by an increase/decrease in input.
+I started off by trying logistic regression on the entire data and was not shocked to see that it performed poorly by predicting all posts as not promoted (class 0). Since most of the posts in the dataset are not promoted, this is not surprising. The accuracy score is high, which means that the model predicted many of the points correctly. While accuracy is a measure of how well the model performed, the fact that the accuracy score is high does not indicate that this is a good model.  
+The model correctly predicted all of the non-promoted posts correctly, but it missed the promoted posts and predicted all of these as non-promoted also. Looking at the confusion matrix,  we see that none of the points in the positive class (promoted) were correctly predicted. 
+
 
 ```python
 cols_train = data.drop('is_promoted', axis = 1).columns
@@ -95,10 +97,10 @@ logreg.fit(X,y)
 data['promo_pred_1'] = logreg.predict(X)
 ```
 
-Here we can see that the logistic regression model predicted all class 0:
+Here we can see that the logistic regression model predicted all posts as non-promoted:
 Class 0:    204804
 
-The below confusion matrics shows that there were 201448 non promoted posts correctly predicted, while 3356 of the promoted posts also were labeled as non-promoted.
+The below confusion matrics shows that there were 201448 non promoted posts correctly predicted, while all of the 3356 promoted posts were incorrectly labeled as non-promoted.
 
 Confustion Matrix:
 
@@ -107,7 +109,7 @@ Confustion Matrix:
 Non-Promoted-Actual |           201448       |          0          |
 Promoted-Actual     |           3356         |          0          |
 
-The classification report breaks down the true positive and false positive rates to give better insights into where the model scored well or not.
+The classification report breaks down the true positive and false positive rates to give better insights into where the model scored well or not. We can see that the promoted posts scored 0 precision and 0 recall, indicating a poor performance.
 
 Classification Report:
 
@@ -161,8 +163,7 @@ Promoted-Actual     |           85           |           403       |
 
 ### 3 - Decision Tree Classifier and feature importance
 
-Below I trained a decision tree classifier on all the features, and it showed that the top 3 features with the most imformation gain were: impressions fan unique, impressions organic unique ,impressions by story type unique other. 
-The model performed alot better than logistic regression. It scored perfectly on unpromoted posts and very well on promoted posts.
+Below I trained a decision tree classifier on all the features, and it showed that the top 3 features with the most imformation gain were: impressions fan unique, impressions organic unique ,impressions by story type unique other. So, my thoughts on which features could be good predictors were not quite correct. It looks like impressions are very important in predicting whether a post is promoted or not. The model performed alot better than logistic regression. It scored perfectly on unpromoted posts and very well on promoted posts.
 
 ```python
 '''
@@ -240,3 +241,6 @@ Classification Report:
 | Promoted    |   0.78    |  0.74  |  0.76    |
 |avg/total    |   0.99    |  0.99  |  0.99    |
 
+
+#### Conclusion
+In conclusion, the decision tree classifier performed better than logistic regression. While decision trees are also simple models, these do not assume that there is a linear relationship between the features and response; and in this case the classifier performed better. 
